@@ -1,5 +1,12 @@
 export default function MatchCard({ match }) {
-  const { name, email, subjects, availability, subjectOverlap, availabilityOverlap } = match;
+  const {
+    name,
+    email,
+    subjects         = [],
+    availability     = [],
+    subjectOverlap   = [],
+    availabilityOverlap = [],
+  } = match;
 
   return (
     <div style={s.card}>

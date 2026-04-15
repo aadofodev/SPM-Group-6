@@ -11,7 +11,7 @@ router.get('/', auth, async (req, res) => {
   const subjectFilter  = subjects     ? subjects.split(',').map(s => s.trim()).filter(Boolean)     : [];
   const availFilter    = availability ? availability.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-  const query = { _id: { $ne: req.user.id } };
+  const query = { email: { $ne: req.user.email } };
 
   if (subjectFilter.length)  query.subjects     = { $in: subjectFilter };
   if (availFilter.length)    query.availability = { $in: availFilter };
