@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
-const authRoutes = require('./routes/auth');
+const authRoutes    = require('./routes/auth');
+const matchRoutes   = require('./routes/matches');
 
 const app = express();
 app.use(cors());
@@ -14,7 +15,8 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.error('❌ DB connection error:', err));
 
 app.get('/', (req, res) => res.json({ message: 'UniMatch API running' }));
-app.use('/api/auth', authRoutes);
+app.use('/api/auth',    authRoutes);
+app.use('/api/matches', matchRoutes);
 
 app.listen(process.env.PORT, () => {
   console.log(`🚀 Server running on port ${process.env.PORT}`);
