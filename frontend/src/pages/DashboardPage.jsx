@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import MatchCard from '../components/MatchCard';
@@ -64,6 +64,7 @@ export default function DashboardPage() {
         <span style={s.logo}>UniMatch</span>
         <div style={s.userInfo}>
           <span style={s.userName}>Hi, {user?.name}</span>
+          <Link to="/settings" style={s.settingsBtn}>Settings</Link>
           <button style={s.logoutBtn} onClick={handleLogout}>Sign Out</button>
         </div>
       </header>
@@ -152,6 +153,10 @@ const s = {
   logo:    { fontWeight: 700, fontSize: '1.2rem', letterSpacing: '-0.02em' },
   userInfo: { display: 'flex', alignItems: 'center', gap: '1rem' },
   userName: { fontSize: '0.9rem' },
+  settingsBtn: {
+    background: 'rgba(255,255,255,0.15)', color: '#fff', textDecoration: 'none',
+    padding: '0.35rem 0.8rem', borderRadius: 6, fontSize: '0.85rem',
+  },
   logoutBtn: {
     background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff',
     padding: '0.35rem 0.8rem', borderRadius: 6, cursor: 'pointer', fontSize: '0.85rem',

@@ -5,6 +5,7 @@ require('dotenv').config();
 
 const authRoutes    = require('./routes/auth');
 const matchRoutes   = require('./routes/matches');
+const userRoutes    = require('./routes/users');
 
 const app = express();
 app.use(cors());
@@ -17,6 +18,7 @@ mongoose.connect(process.env.MONGO_URI)
 app.get('/', (req, res) => res.json({ message: 'UniMatch API running' }));
 app.use('/api/auth',    authRoutes);
 app.use('/api/matches', matchRoutes);
+app.use('/api/users',   userRoutes);
 
 app.listen(process.env.PORT, () => {
   console.log(`🚀 Server running on port ${process.env.PORT}`);
