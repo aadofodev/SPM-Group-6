@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -10,9 +10,10 @@ export default function RoomsPage() {
   const { token, user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [rooms,   setRooms]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState('');
+  const [rooms,    setRooms]    = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState('');
 
   useEffect(() => {
     axios.get(`${API}/api/rooms`, {
@@ -22,6 +23,26 @@ export default function RoomsPage() {
       .catch(() => setError('Failed to load rooms.'))
       .finally(() => setLoading(false));
   }, [token]);
+
+  const fetchBookings = useCallback(() => {
+    axios.get(`${API}/api/bookings/mine`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(({ data }) => setBookings(data))
+      .catch(() => {});
+  }, [token]);
+
+  useEffect(() => { fetchBookings(); }, [fetchBookings]);
+
+  async function handleBook(roomId, startTime, endTime) {
+    const { data } = await axios.post(
+      `${API}/api/rooms/${roomId}/book`,
+      { startTime, endTime },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setRooms(prev => prev.map(r => r._id === roomId ? data.room : r));
+    fetchBookings();
+  }
 
   const available = rooms.filter(r => r.status === 'available');
   const occupied  = rooms.filter(r => r.status === 'occupied');
@@ -54,22 +75,50 @@ export default function RoomsPage() {
         {!loading && !error && (
           <>
             <SummaryBar available={available.length} occupied={occupied.length} />
+
             <section>
               <h2 style={s.sectionTitle}>
                 <GreenDot /> Available ({available.length})
               </h2>
               {available.length === 0
                 ? <p style={s.empty}>No rooms currently available.</p>
-                : <div style={s.grid}>{available.map(r => <RoomCard key={r._id} room={r} />)}</div>
+                : (
+                  <div style={s.grid}>
+                    {available.map(r => (
+                      <RoomCard key={r._id} room={r} onBook={handleBook} />
+                    ))}
+                  </div>
+                )
               }
             </section>
+
             <section style={{ marginTop: '2rem' }}>
               <h2 style={s.sectionTitle}>
                 <RedDot /> Occupied ({occupied.length})
               </h2>
               {occupied.length === 0
                 ? <p style={s.empty}>No rooms currently occupied.</p>
-                : <div style={s.grid}>{occupied.map(r => <RoomCard key={r._id} room={r} />)}</div>
+                : (
+                  <div style={s.grid}>
+                    {occupied.map(r => (
+                      <RoomCard key={r._id} room={r} onBook={handleBook} />
+                    ))}
+                  </div>
+                )
+              }
+            </section>
+
+            <section style={{ marginTop: '2.5rem' }}>
+              <h2 style={s.sectionTitle}>My Bookings</h2>
+              {bookings.length === 0
+                ? <p style={s.empty}>You have no bookings yet.</p>
+                : (
+                  <div style={s.grid}>
+                    {bookings.map(b => (
+                      <BookingCard key={b._id} booking={b} />
+                    ))}
+                  </div>
+                )
               }
             </section>
           </>
@@ -77,6 +126,28 @@ export default function RoomsPage() {
       </div>
     </div>
   );
+}
+
+function BookingCard({ booking }) {
+  return (
+    <div style={bc.card}>
+      <div style={bc.header}>
+        <span style={bc.roomName}>{booking.room?.name ?? 'Unknown Room'}</span>
+        <span style={bc.badge}>Booked</span>
+      </div>
+      <p style={bc.location}>{booking.room?.location}</p>
+      <p style={bc.times}>
+        {fmtDateTime(booking.startTime)} → {fmtDateTime(booking.endTime)}
+      </p>
+    </div>
+  );
+}
+
+function fmtDateTime(iso) {
+  return new Date(iso).toLocaleString(undefined, {
+    month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
 }
 
 function SummaryBar({ available, occupied }) {
@@ -100,8 +171,12 @@ function SummaryBar({ available, occupied }) {
   );
 }
 
-const GreenDot = () => <span style={{ display:'inline-block', width:10, height:10, borderRadius:'50%', background:'#16a34a', marginRight:8 }} />;
-const RedDot   = () => <span style={{ display:'inline-block', width:10, height:10, borderRadius:'50%', background:'#dc2626', marginRight:8 }} />;
+const GreenDot = () => (
+  <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#16a34a', marginRight: 8 }} />
+);
+const RedDot = () => (
+  <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#dc2626', marginRight: 8 }} />
+);
 
 const s = {
   page:      { minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, sans-serif' },
@@ -140,4 +215,22 @@ const s = {
   summaryItem:  { display: 'flex', flexDirection: 'column', alignItems: 'center' },
   summaryCount: { fontSize: '1.5rem', fontWeight: 700 },
   summaryLabel: { fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' },
+};
+
+const bc = {
+  card: {
+    background: '#fff', borderRadius: 10,
+    padding: '1rem 1.25rem', boxShadow: '0 1px 8px rgba(0,0,0,0.07)',
+    borderTop: '3px solid #3b5bdb',
+    display: 'flex', flexDirection: 'column', gap: '0.4rem',
+  },
+  header:   { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  roomName: { fontWeight: 700, fontSize: '0.95rem', color: '#1e293b' },
+  badge:    {
+    fontSize: '0.7rem', fontWeight: 600, padding: '0.15rem 0.55rem',
+    borderRadius: 20, background: '#eff6ff', color: '#1d4ed8',
+    textTransform: 'uppercase', letterSpacing: '0.04em',
+  },
+  location: { margin: 0, fontSize: '0.82rem', color: '#64748b' },
+  times:    { margin: 0, fontSize: '0.8rem', color: '#94a3b8' },
 };

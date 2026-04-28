@@ -1,7 +1,8 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const User = require('./models/User');
-const Room = require('./models/Room');
+const User    = require('./models/User');
+const Room    = require('./models/Room');
+const Booking = require('./models/Booking');
 
 const students = [
   {
@@ -42,20 +43,23 @@ const students = [
 ];
 
 const rooms = [
-  { name: 'Room A1',  capacity: 2,  location: 'Library, Floor 1', status: 'available' },
-  { name: 'Room A2',  capacity: 4,  location: 'Library, Floor 1', status: 'occupied'  },
-  { name: 'Room B1',  capacity: 6,  location: 'Library, Floor 2', status: 'available' },
-  { name: 'Room B2',  capacity: 4,  location: 'Library, Floor 2', status: 'occupied'  },
-  { name: 'Room C1',  capacity: 8,  location: 'Science Block',    status: 'available' },
-  { name: 'Room C2',  capacity: 2,  location: 'Science Block',    status: 'available' },
-  { name: 'Room D1',  capacity: 10, location: 'Engineering Hub',  status: 'occupied'  },
-  { name: 'Room D2',  capacity: 6,  location: 'Engineering Hub',  status: 'available' },
-  { name: 'Room E1',  capacity: 4,  location: 'Arts Centre',      status: 'occupied'  },
-  { name: 'Room E2',  capacity: 8,  location: 'Arts Centre',      status: 'available' },
+  { name: 'Room A1', capacity: 2,  location: 'Library, Floor 1', status: 'available' },
+  { name: 'Room A2', capacity: 4,  location: 'Library, Floor 1', status: 'available' },
+  { name: 'Room B1', capacity: 6,  location: 'Library, Floor 2', status: 'available' },
+  { name: 'Room B2', capacity: 4,  location: 'Library, Floor 2', status: 'available' },
+  { name: 'Room C1', capacity: 8,  location: 'Science Block',    status: 'available' },
+  { name: 'Room C2', capacity: 2,  location: 'Science Block',    status: 'available' },
+  { name: 'Room D1', capacity: 10, location: 'Engineering Hub',  status: 'available' },
+  { name: 'Room D2', capacity: 6,  location: 'Engineering Hub',  status: 'available' },
+  { name: 'Room E1', capacity: 4,  location: 'Arts Centre',      status: 'available' },
+  { name: 'Room E2', capacity: 8,  location: 'Arts Centre',      status: 'available' },
 ];
 
 async function seed() {
   await mongoose.connect(process.env.MONGO_URI);
+
+  await Booking.deleteMany({});
+  console.log('✅ Cleared all bookings');
 
   await User.deleteMany({});
   await User.create(students);
@@ -63,7 +67,7 @@ async function seed() {
 
   await Room.deleteMany({});
   await Room.create(rooms);
-  console.log('✅ Seeded 10 study rooms');
+  console.log('✅ Seeded 10 study rooms (all available)');
 
   await mongoose.disconnect();
 }

@@ -7,6 +7,12 @@ const userSchema = new mongoose.Schema({
   password:     { type: String, required: true },
   subjects:     { type: [String], default: [] },
   availability: { type: [String], default: [] },
+  gamificationData: {
+    totalHoursStudied:      { type: Number, default: 0 },
+    totalSessionsCompleted: { type: Number, default: 0 },
+    earnedBadges:           { type: [String], default: [] },
+    weeklyHours:            { type: Number, default: 0 },
+  },
 }, { timestamps: true });
 
 userSchema.pre('save', async function () {
