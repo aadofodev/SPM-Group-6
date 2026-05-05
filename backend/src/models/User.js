@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema({
     totalSessionsCompleted: { type: Number, default: 0 },
     earnedBadges:           { type: [String], default: [] },
     weeklyHours:            { type: Number, default: 0 },
+    lastWeekReset:          { type: Date, default: Date.now },
   },
 }, { timestamps: true });
 

@@ -4,6 +4,14 @@ const auth = require('../middleware/auth');
 
 const router = express.Router();
 
+function getISOWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
 const BADGE_RULES = [
   { name: 'First Step',      check: g => g.totalSessionsCompleted >= 1  },
   { name: 'Getting Serious', check: g => g.totalSessionsCompleted >= 5  },
@@ -34,6 +42,16 @@ router.post('/log', auth, async (req, res) => {
 
   const g = user.gamificationData;
   const hoursToAdd = durationMinutes / 60;
+
+  const lastReset = user.gamificationData.lastWeekReset
+    ? new Date(user.gamificationData.lastWeekReset)
+    : new Date(0);
+
+  if (getISOWeek(lastReset) !== getISOWeek(new Date()) ||
+      lastReset.getFullYear() !== new Date().getFullYear()) {
+    user.gamificationData.weeklyHours = 0;
+    user.gamificationData.lastWeekReset = new Date();
+  }
 
   g.totalHoursStudied += hoursToAdd;
   g.totalSessionsCompleted += 1;
