@@ -34,10 +34,12 @@ export default function RoomsPage() {
 
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
-  async function handleBook(roomId, startTime, endTime) {
+  async function handleBook(roomId, startTime, endTime, invitedPartnerEmail) {
+    const body = { startTime, endTime };
+    if (invitedPartnerEmail) body.invitedPartnerEmail = invitedPartnerEmail;
     const { data } = await axios.post(
       `${API}/api/rooms/${roomId}/book`,
-      { startTime, endTime },
+      body,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     setRooms(prev => prev.map(r => r._id === roomId ? data.room : r));
@@ -129,16 +131,27 @@ export default function RoomsPage() {
 }
 
 function BookingCard({ booking }) {
+  const isOrganiser = booking.role === 'organiser';
+  const hasPartner  = booking.invitedPartner?.email;
+
   return (
     <div style={bc.card}>
       <div style={bc.header}>
         <span style={bc.roomName}>{booking.room?.name ?? 'Unknown Room'}</span>
-        <span style={bc.badge}>Booked</span>
+        <span style={isOrganiser ? bc.badgeBlue : bc.badgeGreen}>
+          {isOrganiser ? 'You organised this' : `👤 Invited by ${booking.bookedByName || 'someone'}`}
+        </span>
       </div>
       <p style={bc.location}>{booking.room?.location}</p>
       <p style={bc.times}>
         {fmtDateTime(booking.startTime)} → {fmtDateTime(booking.endTime)}
       </p>
+      {isOrganiser && hasPartner && (
+        <p style={bc.partner}>Studying with: {booking.invitedPartner.name}</p>
+      )}
+      {!isOrganiser && (
+        <p style={bc.partner}>Booked by: {booking.bookedByName || booking.bookedBy}</p>
+      )}
     </div>
   );
 }
@@ -224,13 +237,19 @@ const bc = {
     borderTop: '3px solid #3b5bdb',
     display: 'flex', flexDirection: 'column', gap: '0.4rem',
   },
-  header:   { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  roomName: { fontWeight: 700, fontSize: '0.95rem', color: '#1e293b' },
-  badge:    {
+  header:     { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' },
+  roomName:   { fontWeight: 700, fontSize: '0.95rem', color: '#1e293b' },
+  badgeBlue:  {
     fontSize: '0.7rem', fontWeight: 600, padding: '0.15rem 0.55rem',
     borderRadius: 20, background: '#eff6ff', color: '#1d4ed8',
-    textTransform: 'uppercase', letterSpacing: '0.04em',
+    textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap',
+  },
+  badgeGreen: {
+    fontSize: '0.7rem', fontWeight: 600, padding: '0.15rem 0.55rem',
+    borderRadius: 20, background: '#dcfce7', color: '#15803d',
+    textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap',
   },
   location: { margin: 0, fontSize: '0.82rem', color: '#64748b' },
   times:    { margin: 0, fontSize: '0.8rem', color: '#94a3b8' },
+  partner:  { margin: 0, fontSize: '0.8rem', color: '#475569', fontStyle: 'italic' },
 };

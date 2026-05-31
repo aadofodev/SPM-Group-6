@@ -1,6 +1,7 @@
 const express = require('express');
 const Room    = require('../models/Room');
 const Booking = require('../models/Booking');
+const User    = require('../models/User');
 const auth    = require('../middleware/auth');
 
 const router = express.Router();
@@ -19,16 +20,24 @@ router.post('/:id/book', auth, async (req, res) => {
     return res.status(400).json({ message: 'Room is already occupied' });
   }
 
-  const { startTime, endTime } = req.body;
+  const { startTime, endTime, invitedPartnerEmail } = req.body;
   if (!startTime || !endTime) {
     return res.status(400).json({ message: 'startTime and endTime are required' });
   }
 
+  let invitedPartner = { email: '', name: '' };
+  if (invitedPartnerEmail) {
+    const partner = await User.findOne({ email: invitedPartnerEmail.toLowerCase() }).select('name email');
+    if (partner) invitedPartner = { email: partner.email, name: partner.name };
+  }
+
   const booking = await Booking.create({
-    room:      room._id,
-    bookedBy:  req.user.email,
-    startTime: new Date(startTime),
-    endTime:   new Date(endTime),
+    room:           room._id,
+    bookedBy:       req.user.email,
+    bookedByName:   req.user.name || '',
+    startTime:      new Date(startTime),
+    endTime:        new Date(endTime),
+    invitedPartner,
   });
 
   room.status = 'occupied';

@@ -1,13 +1,21 @@
 import { useState } from 'react';
+import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+
+const API = 'http://localhost:5001';
 
 export default function RoomCard({ room, onBook }) {
   const available = room.status === 'available';
+  const { token } = useAuth();
 
-  const [showForm, setShowForm] = useState(false);
-  const [startTime, setStartTime] = useState('');
-  const [endTime,   setEndTime]   = useState('');
-  const [booking,   setBooking]   = useState(false);
-  const [bookError, setBookError] = useState('');
+  const [showForm,            setShowForm]            = useState(false);
+  const [startTime,           setStartTime]           = useState('');
+  const [endTime,             setEndTime]             = useState('');
+  const [booking,             setBooking]             = useState(false);
+  const [bookError,           setBookError]           = useState('');
+  const [matches,             setMatches]             = useState([]);
+  const [loadingMatches,      setLoadingMatches]      = useState(false);
+  const [invitedPartnerEmail, setInvitedPartnerEmail] = useState('');
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -22,10 +30,11 @@ export default function RoomCard({ room, onBook }) {
     setBooking(true);
     setBookError('');
     try {
-      await onBook(room._id, startTime, endTime);
+      await onBook(room._id, startTime, endTime, invitedPartnerEmail || null);
       setShowForm(false);
       setStartTime('');
       setEndTime('');
+      setInvitedPartnerEmail('');
     } catch (err) {
       setBookError(err.response?.data?.message || err.message || 'Booking failed.');
     } finally {
@@ -38,6 +47,17 @@ export default function RoomCard({ room, onBook }) {
     setStartTime('');
     setEndTime('');
     setBookError('');
+    setInvitedPartnerEmail('');
+    setMatches([]);
+  }
+
+  function handleOpenForm() {
+    setShowForm(true);
+    setLoadingMatches(true);
+    axios.get(`${API}/api/matches`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(({ data }) => setMatches(data))
+      .catch(() => setMatches([]))
+      .finally(() => setLoadingMatches(false));
   }
 
   return (
@@ -57,7 +77,7 @@ export default function RoomCard({ room, onBook }) {
       </div>
 
       {available && !showForm && (
-        <button style={s.bookBtn} onClick={() => setShowForm(true)}>
+        <button style={s.bookBtn} onClick={handleOpenForm}>
           Book Now
         </button>
       )}
@@ -80,6 +100,20 @@ export default function RoomCard({ room, onBook }) {
             style={s.input}
             required
           />
+          <label style={s.label}>Invite a study partner (optional)</label>
+          <select
+            value={invitedPartnerEmail}
+            onChange={e => setInvitedPartnerEmail(e.target.value)}
+            style={s.input}
+            disabled={loadingMatches}
+          >
+            <option value="">
+              {loadingMatches ? 'Loading matches…' : 'No partner'}
+            </option>
+            {matches.map(m => (
+              <option key={m.email} value={m.email}>{m.name}</option>
+            ))}
+          </select>
           {bookError && <p style={s.error}>{bookError}</p>}
           <div style={s.formActions}>
             <button type="button" onClick={handleCancel} style={s.cancelBtn}>

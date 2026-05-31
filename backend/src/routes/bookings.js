@@ -6,9 +6,21 @@ const router = express.Router();
 
 // GET /api/bookings/mine
 router.get('/mine', auth, async (req, res) => {
-  const bookings = await Booking.find({ bookedBy: req.user.email })
+  const email = req.user.email;
+  const raw = await Booking.find({
+    $or: [
+      { bookedBy: email },
+      { 'invitedPartner.email': email },
+    ],
+  })
     .populate('room')
     .sort({ createdAt: -1 });
+
+  const bookings = raw.map(b => ({
+    ...b.toObject(),
+    role: b.bookedBy === email ? 'organiser' : 'invited',
+  }));
+
   res.json(bookings);
 });
 
