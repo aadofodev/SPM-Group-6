@@ -160,7 +160,11 @@ export default function ProfileSettingsPage() {
           <p style={{ color: '#64748b' }}>Loading your profile…</p>
         ) : (
           <>
-            <div style={s.form}>
+            {gamificationData && (
+              <BadgeDisplay earnedBadges={gamificationData.earnedBadges} />
+            )}
+
+            <div style={{ ...s.form, marginTop: '1.5rem' }}>
               <CheckboxGroup
                 label="Your Subjects"
                 options={ALL_SUBJECTS}
@@ -181,10 +185,6 @@ export default function ProfileSettingsPage() {
                 </button>
               </div>
             </div>
-
-            {gamificationData && (
-              <BadgeDisplay earnedBadges={gamificationData.earnedBadges} />
-            )}
           </>
         )}
       </div>
